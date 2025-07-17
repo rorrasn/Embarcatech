@@ -294,21 +294,6 @@ int main()
     // Ativa o modo "station", que permite se conectar a uma rede existente
     cyw43_arch_enable_sta_mode();
 
-    /* Configure IP fixo
-    ip4_addr_t ip, gw, mask;
-    IP4_ADDR(&ip, 192, 168, 15, 150);   // IP fixo desejado
-    IP4_ADDR(&gw, 192, 168, 15, 1);     // Gateway (normalmente IP do roteador)
-    IP4_ADDR(&mask, 255, 255, 255, 0); // Máscara de sub-rede
-
-    struct netif *iface = netif_default;
-    if (iface == NULL){
-        printf("Erro: interface de rede não está pronta.\n");
-    }
-    else{
-        dhcp_stop(iface);                       // Desativa DHCP
-        netif_set_addr(iface, &ip, &mask, &gw); // Define IP, máscara e gateway
-    }*/
-
     // Conecta à rede Wi-Fi com timeout de 15 segundos
     printf("Conectando... à rede Wi-Fi: %s...\n", WIFI_SSID);
     if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASS, CYW43_AUTH_WPA2_AES_PSK, 15000))
