@@ -21,7 +21,8 @@
 // Endereço I2C padrão do VL53L0X
 #define VL53L0X_DEFAULT_ADDR 0x29
 
-float current_distance_cm;
+
+float current_distance_cm ;
 float MAX_BIN_HEIGHT_CM = 50.0f;
 volatile bool trash_bin_is_full = false; // Variável global para o estado da lixeira
 
@@ -29,7 +30,7 @@ volatile bool trash_bin_is_full = false; // Variável global para o estado da li
 char http_response[HTTP_RESPONSE_BUFFER_SIZE];
 
 // HTML Page content with placeholders for dynamic data
-static const char *html_page =
+static const char *html_page = 
     "HTTP/1.1 200 OK\r\n"
     "Content-Type: text/html; charset=UTF-8\r\n"
     "Connection: close\r\n\r\n"
@@ -59,7 +60,7 @@ static const char *html_page =
     "      gap: 20px;\r\n"
     "      padding: 20px;\r\n"
     "    }\r\n"
-    "\r\n"
+        "\r\n"
     "    img {\r\n"
     "      float: right;\r\n"
     "    }\r\n"
@@ -112,7 +113,7 @@ static const char *html_page =
     "          <td>%.2f cm</td>\r\n" // Distância do sensor
     "          <td>%.0f%%</td>\r\n"  // Porcentagem de volume
     "          <td>100%%</td>\r\n"   // Exemplo fixo
-    "          <td>25%%</td>\r\n"    // Exemplo fixo
+    "          <td>25%%</td>\r\n"     // Exemplo fixo
     "        </tr>\r\n"
     "        <tr>\r\n"
     "          <td>MONTE C</td>\r\n"
@@ -211,11 +212,9 @@ static err_t http_callback(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_
         tcp_close(tpcb);
         return ERR_OK;
     }
-    // Atualiza distância e estado da lixeira no momento da requisição
-    current_distance_cm = measure_distance();
-    float volume_percent = calcular_volume_percentual(current_distance_cm, MAX_BIN_HEIGHT_CM);
-    trash_bin_is_full = volume_percent >= 80.0f;
 
+    // Calcula o volume percentual e determina o estado para o HTML
+    float volume_percent = calcular_volume_percentual(current_distance_cm, MAX_BIN_HEIGHT_CM);
     const char *status_class = trash_bin_is_full ? "full-status" : "empty-status";
     const char *status_text = trash_bin_is_full ? "ATENCÃO alguma lixeira esta CHEIA!" : "Sistema normal";
 
@@ -229,8 +228,11 @@ static err_t http_callback(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_
 
     // Libera o buffer pbuf
     pbuf_free(p);
-    tcp_close(tpcb);
+
+    // Fecha a conexão TCP. Importante para HTTP/1.1 com Connection: close
+    
     return ERR_OK;
+    tcp_close(tpcb);
 }
 
 // Callback de conexão: define o callback HTTP para conexões novas
@@ -317,6 +319,8 @@ int main()
 
     // Inicializa o sensor VL53L0X ;
     tofInit(0, 0x29, 0);
+
+    // Inicia o servidor HTTP LWIP apenas uma vez
     start_http_server();
 
     // Loop principal: mede a distância e atualiza o estado do LED
@@ -332,16 +336,18 @@ int main()
         printf("Distancia: %.2f cm | Volume: %.2f%% cheio\n", current_distance_cm, volume_percent);
 
         // Atualiza o estado da lixeira (cheia/vazia) e o LED de acordo
-        if (volume_percent >= 80.0f){ // Lixeira é considerada "cheia" a partir de 80%
+        if (volume_percent >= 80.0f)
+        { // Lixeira é considerada "cheia" a partir de 80%
             trash_bin_is_full = true;
             gpio_put(LED_RED, 1); // Acende o LED
         }
-        else{
+        else
+        {
             trash_bin_is_full = false;
             gpio_put(LED_RED, 0); // Apaga o LED
         }
 
-        time_us_64();
+        sleep_ms(2000); // Mede a distância a cada 2 segundos
     }
 
     cyw43_arch_deinit(); // Esta linha não será atingida em um loop infinito, mas é boa prática
